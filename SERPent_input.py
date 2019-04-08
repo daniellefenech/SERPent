@@ -4,9 +4,8 @@
 ##############################################################################
 # Original version 13/09/2011 - Luke Peck                                    #
 #                                                                            #
-# Last update 12/2015 - Danielle Fenech                                      #
-#                                                                            #              
-# Current version Aesculapian: 1.0 17/12/2015                                #
+# Last update 03/2019 - Danielle Fenech                                      #
+#                                                                            #
 ##############################################################################
 # This file contains all the information the user must input before running  #
 # SERPent.                                                                   #
@@ -24,28 +23,38 @@
 #### Input AIPS data file information ####
 
 
-AIPS_user_number = 9000            # The AIPS user number the data is on.
-Name = 'M82LBND'                # The uvdata name of the catalogue.
-Klass = 'MSORT'                  # The uvdata klass of the catalogue.
+AIPS_user_number = 5000            # The AIPS user number the data is on.
+Name = '1430+1339'                # The uvdata name of the catalogue.
+Klass = 'SPLAT'                  # The uvdata klass of the catalogue.
 Disk = 1                          # The uvdata disk number of the catalogue (integer).
 Seq = 1                         # The uvdata sequence number of the catalogue (int).
 
 
 #### Output files directory Information ####
-path2folder = '/local/python/RFI/Luke/SERPent/new_par/'
 
+path2folder = '/home/username/'
                     # Directory path to where the output text files (FG text files
                     # and intermediate pickle files) will be written to.
 
 
 #### Parallelisation information ####
-NCPU = 4            # Define here the number of CPUs you want to use.
+NCPU = 16           # Define here the number of CPUs you want to use.
                     # Parallelization is currently implemented on a baseline basis
                     # per source therefore the maximum number of CPUs ultilized 
                     # will be the number of baselines in the data. e.g. for e-MERLIN 
                     # a maximum of 21 CPUs will be used by SERPent (21 baselines) for 
                     # one source.
+                    # If you wish to use all available CPUs, set NCPU = 0
 
+#### How to write flag tables ####
+
+use_fits = 'yes'    # Choose whether to use parseltongue to write flag tables directly to the 
+                    # AIPS data file (use_fits = 'no') or whether either pyfits/astropy are 
+                    # used to create separate fits files containing the flag tables 
+                    # (use_fits = 'yes'). In either case the flag tables created by SERPent will
+                    # be copied to the data file on completion. The latter option (using pyfits)
+                    # is generally MUCH faster and the reccommended option. However it can be 
+                    # more memory intensive.
 
 #### Log Information     ####
 write2log = 'no'                 # 'yes' only if using the multi.py script file to write timing
@@ -61,17 +70,20 @@ write2log = 'no'                 # 'yes' only if using the multi.py script file 
 #### If this is not required set phasecal = 'no'     ####
 #########################################################
 
+do_Lovell_scan = 'no'            # If you wish to check for Lovell stationary scans on MERLIN
+                                  # or e-MERLIN data use 'yes', else 'no'. If do_Lovell_scan = 'no'
+                                  # is used the phascal list will be ignored.
 
-phasecal = '0555+398'     # If one of the sources (multi files) or source is the
-                           # phase cal, please write the name of the source as this
-                           # variable. Else put 'no'.
-                           # This information is used for the Lovell Stationary Scans passage of
-                           # SERPent if the source is the phasecal designated here, the telescope
-                           # is e-MERLIN and the baseline contains the Lovell telescope.
-do_lovell_cross = 'no'     # If do_lovell_cross = 'yes' the Lovell dropout check will be performed
-                           # on all stokes parameters. If do_lovell_cross = 'no' the Lovell dropout
-                           # check will only be performed on parallel hands (not cross-hands). This
-                           # should be sufficient to catch genuine dropouts.
+phasecal = ['J0958+65','M82']     # If any of the sources (multi files) are phase calibrators
+                                  # list them here for checking wth the Lovell stationary scan 
+                                  # passage. N.B. for MERLIN/e-MERLIN data only.
+                                  # This information is used for the Lovell Stationary Scans passage of
+                                  # SERPent if the source is the phasecal designated here, the telescope
+                                  # is e-MERLIN and the baseline contains the Lovell telescope.
+do_lovell_cross = 'no'            # If do_lovell_cross = 'yes' the Lovell dropout check will be performed
+                                  # on all stokes parameters. If do_lovell_cross = 'no' the Lovell dropout
+                                  # check will only be performed on parallel hands (not cross-hands). This
+                                  # should be sufficient to catch genuine dropouts.
 
 
 
@@ -86,9 +98,9 @@ do_lovell_cross = 'no'     # If do_lovell_cross = 'yes' the Lovell dropout check
 
                           # system failures where the visibilities drop to around 0 Jy in the same 
                           # scans where good data is present.
-zero_level = 'yes'        # If you want to execute this code set this variable to 'yes'
+zero_level = 'no'        # If you want to execute this code set this variable to 'yes'
                           # else set it to 'no'
-                          # This setting execute the Zero Level code to flag telescope dropouts and 
+                          # This setting executes the Zero Level code to flag telescope dropouts and 
                           # other system failures where the visibilities drop to around 0 Jy in the 
                           # same scans where good data is present.
 
@@ -104,14 +116,40 @@ zero_flag_allif = 'yes'   # The zero_level_dropout code operates on each IF indi
 #### SERPent is executed on each polarisation      ####
 #### independently. The settings below determine   ####
 #### how the flagging information from each        ####
-#### polarisation is combined.                     ####
+#### polarization is combined.                     ####
 #######################################################
 
 
-coadd_polarization_flags = 'no'   # Combine flags for all polarizations = 'yes', 'no' flags all
-                                   # polarizations separately
+select_stokes = 'yes'              # If set to 'yes' only the polarizations listed in stokes below
+                                   # will be processed else if set to 'no' all polarisations present
+                                   # in the data will be processed.
 
-coadd_zero_flags = 'no'            # If you choose not to combine flags for all polarizations 
+stokes = ['RR','LL']               # Which polarizations should SERPent include. N.B. This will be 
+                                   # ignored if select_stokes == 'no'.
+
+flag_all_stokes = 'yes'            # If select_stokes ='yes' and a subset of polarizations is chosen
+                                   # setting flag_all_stokes = 'yes' will apply the flags to ALL 
+                                   # polarizations in the data. e.g. if the data contains RR,LL,LR,RL
+                                   # and only RR,LL are selected in stokes for processing then setting 
+                                   # flag_all_stokes = 'yes' will write flag entries for all four 
+                                   # polarizations.
+                                   # N.B. if select_stokes = 'yes' and flag_stokes = 'yes' then 
+                                   # coadd_polarization_flags will be forced to 'yes'
+                                   # i.e. all flags from all polarizations processed will be 
+                                   # combined and applied to all polarizations present in the data.
+                                   # If select_stokes = 'yes' and flag_all_stokes = 'no' then flag 
+                                   # entries will only be written for the polarizations specified 
+                                   # in the stokes setting above.
+
+coadd_polarization_flags = 'no'    # Combine flags for all polarizations = 'yes', 'no' flags all
+                                   # polarizations separately. If certain polarisations are 
+                                   # selected with select_stokes = 'yes', setting 
+                                   # coadd_polarizations_flags = 'yes' will combine the flags 
+                                   # write entries for only those polarisations selected. To write
+                                   # flag entries for ALL polarisation in the data set 
+                                   # flag_all_stokes = 'yes'
+
+coadd_zero_flags = 'yes'            # If you choose not to combine flags for all polarizations 
                                    # coadd_zero_flags = 'no' will keep the zero dropout flags 
                                    # separate for each stokes, whereas coadd_zero_flags = 'yes'
                                    # will combine them. N.B. This setting will be ignored if 
@@ -121,7 +159,7 @@ coadd_lovell_flags = 'yes'         # If you choose not to combine flags for all 
                                    # coadd_lovell_flags = 'no' will keep the lovell dropout flags 
                                    # separate for each stokes, whereas coadd_lovell_flags = 'yes'
                                    # will combine them, this should be the default. N.B. This
-                                   # setting will be ignored if phasecal = 'no'
+                                   # setting will be ignored if do_Lovell_scan = 'no'
 
 
 ###############################################
@@ -134,12 +172,13 @@ coadd_lovell_flags = 'yes'         # If you choose not to combine flags for all 
 ###############################################
 
 
-flag_sources = 'choose'            # Variable to make source selection available. If 'all' flag all
+flag_sources = 'all'            # Variable to make source selection available. If 'all' flag all
                                    # sources in the data. If 'choose', the sources must be specified 
                                    # in the 'flag_list' variable below.
                                    # NB: If flagging a single-source file, you MUST set 
                                    # flag_sources='choose' and enter the source name in the flag_list.
-flag_list = ['J0958+65','M82']
+flag_list = ['1331+305']
+
                                    # A list of comma separated sources to flag, will be ignored unless
                                    # flag_sources='choose' above.
                                    # NB: If flagging a single-source file, you MUST set 
@@ -178,20 +217,20 @@ flagging_options = 'choose'         # variable to define whether to use the flag
 #### Flagging parameters  ####
 
 
-aggressiveness_first_run = [4]      # How aggressive the first run of the flagger is
+aggressiveness_first_run = [25]      # How aggressive the first run of the flagger is
                                     # A lower number is more aggressive
                                     # N.B. default is 4
 max_subset_first_run = [2]          # Maximum subset for first run of the flagger
                                     # This should be a binary number (1,2,4,8,16...)
                                     # N.B. default is 2
-aggressiveness_second_run = [4]     # How aggressive the second run of the flagger is
+aggressiveness_second_run = [25]     # How aggressive the second run of the flagger is
                                     # N.B. default is 4
 max_subset_second_run = [2]         # Maximum subset for second run of the flagger
                                     # N.B. default is 2
 rho = [1.5]                         # Difference in coarseness between each threshold
                                     # level. 1.5 should be specified here.
                                     # N.B. default is 1.5
-kickout_sigma_level = [2.0]         # The kickout clause is tested during before each subset
+kickout_sigma_level = [3.5]         # The kickout clause is tested during before each subset
                                     # run through and takes the form:  
                                     # median + kickout_sigma_level * MAD
                                     # a lower coefficient = deeper flagging/ more aggressive.
@@ -264,36 +303,80 @@ parameters_1 = [25,16,2,128,1.5,3.0]    # parameters MUST be listed in the follo
 #### dosource_specific = 'no'                          ####
 ###########################################################
 
-dosource_specific = 'no'                  # Choices are 'yes' or 'no'. 'Yes' will overide the flagging_options 
+dosource_specific = 'no'                 # Choices are 'yes' or 'no'. 'Yes' will overide the flagging_options 
                                           # and the dobline_specific options above. At least one list of source 
                                           # and baseline parameters must be listed if this setting is used. 
 
-source_0_baselines_0 = ['1-5']            # List of source and baseline combinations corresponding to each 
+source_0_baselines_0 = ['2-5','2-6','2-9','5-6','5-7','5-8','5-9','6-7','6-8','6-9']            
+                                          # List of source and baseline combinations corresponding to each 
                                           # list of parameters. The source order will be either the same 
-source_0_baselines_1 = ['2-5']            # order as the AIPS source table (if flag_sources = 'all' is used) 
+source_0_baselines_1 = ['2-7','7-9','8-9']            # order as the AIPS source table (if flag_sources = 'all' is used) 
                                           # or it will be the order specified in the flag_list (if 
                                           # flag_sources = 'choose' is selected).
+source_0_baselines_2 = ['2-8','7-8'] 
 
-source_1_baselines_0 = ['2-5']            # EXAMPLE: if flag_list = ['1407+284','1331+305'] then 
+source_1_baselines_0 = ['2-5','2-6','2-9','5-6','5-7','5-8','5-9','6-7','6-8','6-9'] 
+                                         
+source_1_baselines_1 = ['2-7','2-8','7-8','7-9','8-9']            
+                                       
+source_2_baselines_0 = ['2-5','2-6','5-6','5-7','5-8','5-9','6-7','6-8','6-9'] 
+                                         
+source_2_baselines_1 = ['2-7','2-8','2-9','7-8','7-9','8-9']            
+   
+source_3_baselines_0 = ['2-5','2-6','2-9','5-6','5-7','5-8','5-9','6-7','6-8','6-9'] 
+                                          # EXAMPLE: if flag_list = ['1407+284','1331+305'] then 
                                           # source_0_baseline_0 should specify baselines for '1407+284'
-source_2_baselines_0 = ['2-5']            # with corresponding parameters in source_0_parameters_0
+source_3_baselines_1 = ['2-7','7-9','8-9']            
+                                          # with corresponding parameters in source_0_parameters_0
                                           # Further baselines and parameter settings for source '1407+284'
-                                          # can be specified in source_0_baselines_n and source_0_parameters_n
+source_3_baselines_2 = ['2-8','7-8']            # can be specified in source_0_baselines_n and source_0_parameters_n
                                           # Baseline selections and corresponding parameters for '1331+305' 
                                           # would be specified using source_1_baselines_n and 
                                           # source_1_parameters_n.
 
-source_0_parameters_0 = [25,16,25,128,1.5,3.0]    # List of parameters corresponding to each source specific
+source_4_baselines_0 = ['2-5','2-6','2-9','5-6','5-7','5-8','5-9','6-7','6-8','6-9'] 
+                                          # EXAMPLE: if flag_list = ['1407+284','1331+305'] then 
+                                          # source_0_baseline_0 should specify baselines for '1407+284'
+source_4_baselines_1 = ['2-7','7-9','8-9']            
+                                          # with corresponding parameters in source_0_parameters_0
+                                          # Further baselines and parameter settings for source '1407+284'
+source_4_baselines_2 = ['2-8','7-8']            # can be specified in source_0_baselines_n and source_0_parameters_n
+                                          # Baseline selections and corresponding parameters for '1331+305' 
+                                          # would be specified using source_1_baselines_n and 
+                                          # source_1_parameters_n.
+
+
+source_0_parameters_0 = [5,2,5,2,3.0]    # List of parameters corresponding to each source specific
                                                   # list of baselines
                                                   # parameters MUST be listed in the following order:
-source_0_parameters_1 = [25,16,25,128,1.5,3.0]    # [aggressiveness_first_run, max_subset_first_run, 
+source_0_parameters_1 = [4,2,4,2,2.8]    # [aggressiveness_first_run, max_subset_first_run, 
                                                   # aggressiveness_second_run, max_subset_second_run, rho, 
                                                   # kickout_sigma_level]
-source_1_parameters_0 = [25,16,2,128,1.5,3.0]
+source_0_parameters_2 = [3,2,3,2,2.7]
+ 
+ 
+source_1_parameters_0 = [10,4,12,16,3.0]    
+                                               
+source_1_parameters_1 = [8,4,10,8,2.8]   
+                                                 
+source_2_parameters_0 = [10,4,12,16,3.0]    
+                                               
+source_2_parameters_1 = [8,4,10,8,2.8]   
+                                                 
+source_3_parameters_0 = [5,2,5,2,3.0]    
+                                               
+source_3_parameters_1 = [4,2,4,2,2.8]   
+                                                 
+source_3_parameters_2 = [3,2,3,2,2.7]
+ 
 
-source_2_parameters_0 = [25,16,2,128,1.5,3.0]
+source_4_parameters_0 = [5,2,5,2,3.0]    
+                                               
+source_4_parameters_1 = [4,2,4,2,2.8]   
+                                                
+source_4_parameters_2 = [3,2,3,2,2.7]
 
-source_3_parameters_0 = [25,16,2,128,1.5,3.0]
+
 
 
 ####################################################
@@ -333,12 +416,17 @@ flag_coinc_times = 0                # This will include flag_coinc_times number 
 do_loadflag = 'no'                 # Choose to apply previous flag tables to the data before flagging
                                     # Options are 'yes' (load tables specified in flag_tables) or 
                                     # 'no' (don't load any flag tables)
-flag_tables = [16,17]                   # Give a comma-separated list of flag tables to load e.g. [1,2]
+flag_tables = [1]                   # Give a comma-separated list of flag tables to load e.g. [1,2]
 
 write_old_flags = 'yes'             # Choose whether the flag information from loaded tables is written
                                     # into the new flag tables (write_old_flags = 'yes') or if only new 
                                     # flags are to be written (write_old_flags = 'no').
 
+mem_low = True                      # Declare if you need to limit the memory usage
+                                    # If you choose to load a flag table, this is primarily used to 
+                                    # determine whether the flag table is loaded and stored in memory
+                                    # (if mem_low = False) or if copies of the old flag arrays are saved 
+                                    # on harddisk and read when needed (if mem_low = True). 
 
 
 ###################################
